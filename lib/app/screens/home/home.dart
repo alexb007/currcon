@@ -1,5 +1,5 @@
 import 'package:currcon/app/common/constants.dart';
-import 'package:currcon/app/screens/home/bloc/home_bloc.dart';
+import 'package:currcon/app/screens/home/cubit/rates_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -15,10 +15,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final amountController = TextEditingController(text: '1');
+  String currencyFrom = currencies[0];
+  String currencyTo = currencies[1];
+  final RatesCubit cubit = RatesCubit();
 
   @override
   void initState() {
     super.initState();
+    cubit.loadRates(currencyFrom);
   }
 
   @override
@@ -28,13 +32,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<HomeBloc>(
-      create: (context) =>
-          HomeBloc()..add(ChangeCurrencyFrom(currencies.first)),
+    return BlocProvider<RatesCubit>(
+      create: (context) => cubit,
       child: Scaffold(
-        body: BlocBuilder<HomeBloc, HomeState>(
+        body: BlocBuilder<RatesCubit, RatesState>(
           builder: (context, state) {
-            if (state is HomeLoaded) {
+            if (state is RatesLoaded) {
               return SafeArea(
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 24),
@@ -69,10 +72,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: Text(e),
                                       ))
                                   .toList(growable: false),
-                              value: state.currencyFrom,
-                              onChanged: (String? value) =>
-                                  BlocProvider.of<HomeBloc>(context)
-                                      .add(ChangeCurrencyFrom(value!)),
+                              value: currencyFrom,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  currencyFrom = value!;
+                                });
+                                cubit.loadRates(currencyFrom);
+                              },
                             ),
                           ),
                         ],
@@ -95,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 NumberFormat().format(
                                     (double.tryParse(amountController.text) ??
                                             0) *
-                                        (state.rates[state.currencyTo] ?? 0)),
+                                        (state.rates[currencyTo] ?? 0)),
                               ),
                             ),
                           ),
@@ -108,10 +114,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: Text(e),
                                       ))
                                   .toList(growable: false),
-                              value: state.currencyTo,
-                              onChanged: (String? value) =>
-                                  BlocProvider.of<HomeBloc>(context)
-                                      .add(ChangeCurrencyTo(value!)),
+                              value: currencyTo,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  currencyTo = value!;
+                                });
+                              },
                             ),
                           ),
                         ],
@@ -121,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             }
-            if (state is HomeLoadError) {
+            if (state is RatesLoadError) {
               return Center(
                 child: Text(state.error),
               );
