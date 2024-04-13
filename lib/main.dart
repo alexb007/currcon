@@ -1,5 +1,9 @@
+import 'package:currcon/app/data/services/currency_rate_service.dart';
 import 'package:currcon/app/router.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+
+final apiClient = RestClient(Dio());
 
 void main() {
   runApp(const Application());
